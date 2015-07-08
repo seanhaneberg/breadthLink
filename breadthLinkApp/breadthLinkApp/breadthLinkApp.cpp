@@ -5,6 +5,7 @@
 #include "stdio.h"
 #include <string>
 #include <math.h>
+#include <time.h>
 
 
 struct BNode
@@ -17,9 +18,9 @@ struct BNode
 
 void PrintTree(BNode* tree, unsigned int printLevel = 0)
 {
-    if (!tree)
+    for (unsigned int i = 0; i < printLevel; i++)
     {
-        return;
+        printf("   ");
     }
 
     if (printLevel > 0)
@@ -27,17 +28,18 @@ void PrintTree(BNode* tree, unsigned int printLevel = 0)
         printf("+");
     }
 
-    for (unsigned int i = 0; i < printLevel; i++)
+    if (!tree)
     {
-        printf("---");
+        printf("(null)\n");
+        return;
     }
 
-    if (printLevel > 0)
-    {
-        printf("| ");
-    }
-
-    std::string output = "Name: " + tree->name;
+    std::string output = "";
+    
+    output += "(";
+    output += std::to_string(printLevel);
+    output += ")";
+    output += "Name: " + tree->name;
     output += (tree->sibling ? " : Sibling: " + tree->sibling->name : "");
     output += "\n";
 
@@ -45,6 +47,7 @@ void PrintTree(BNode* tree, unsigned int printLevel = 0)
 
     unsigned int nextLevel = printLevel + 1;
     PrintTree(tree->left, nextLevel);
+
     PrintTree(tree->right, nextLevel);
 }
 
@@ -77,10 +80,33 @@ std::string GetNextName()
 }
 
 // out of 100
-const unsigned int g_NodeCreationChance = 80;
-const unsigned int g_NodeCreationDenominator = 100;
+const int g_NodeCreationChance = 55;
+const int g_NodeCreationDenominator = 100;
+const int g_maxLevel = 10;
 
-void GenerateBinaryTree(BNode** tree)
+bool DoGenerateNewNode(int level)
+{
+    if (level > g_maxLevel)
+    {
+        return false;
+    }
+
+    int r = rand();
+    printf("rand: %d\n", r);
+    int percentageDecision = r * g_NodeCreationDenominator;
+    printf("percentageDecision1: %d\n", percentageDecision);
+    percentageDecision = percentageDecision / RAND_MAX;
+    printf("percentageDecision2: %d\n\n\n", percentageDecision);
+
+    if (percentageDecision > g_NodeCreationChance)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void GenerateBinaryTree(BNode** tree, int level = 0)
 {
     if (!tree)
     {
@@ -94,9 +120,9 @@ void GenerateBinaryTree(BNode** tree)
     pTree->sibling = nullptr;
 
     // Left chance!
-    if (((rand() * g_NodeCreationDenominator) / RAND_MAX) >= g_NodeCreationChance)
+    if (DoGenerateNewNode(level))
     {
-        GenerateBinaryTree(&(pTree->left));
+        GenerateBinaryTree(&(pTree->left), level + 1);
     }
     else
     {
@@ -104,9 +130,9 @@ void GenerateBinaryTree(BNode** tree)
     }
 
     // Right chance!
-    if (((rand() * g_NodeCreationDenominator) / RAND_MAX) <= g_NodeCreationChance)
+    if (DoGenerateNewNode(level))
     {
-        GenerateBinaryTree(&(pTree->right));
+        GenerateBinaryTree(&(pTree->right), level + 1);
     }
     else
     {
@@ -118,6 +144,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
     BNode* tree = new BNode();
 
+    srand(time(nullptr));
     GenerateBinaryTree(&tree);
     PrintTree(tree);
 
