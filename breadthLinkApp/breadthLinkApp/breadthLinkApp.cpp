@@ -6,6 +6,7 @@
 #include <string>
 #include <math.h>
 #include <time.h>
+#include <queue>
 
 
 struct BNode
@@ -35,7 +36,7 @@ void PrintTree(BNode* tree, unsigned int printLevel = 0)
     }
 
     std::string output = "";
-    
+
     output += "(";
     output += std::to_string(printLevel);
     output += ")";
@@ -46,9 +47,9 @@ void PrintTree(BNode* tree, unsigned int printLevel = 0)
     printf("%s", output.c_str());
 
     unsigned int nextLevel = printLevel + 1;
-    PrintTree(tree->left, nextLevel);
-
     PrintTree(tree->right, nextLevel);
+
+    PrintTree(tree->left, nextLevel);
 }
 
 char g_nextLetter = 'A';
@@ -82,7 +83,7 @@ std::string GetNextName()
 // out of 100
 const int g_NodeCreationChance = 55;
 const int g_NodeCreationDenominator = 100;
-const int g_maxLevel = 10;
+const int g_maxLevel = 5;
 
 bool DoGenerateNewNode(int level)
 {
@@ -92,11 +93,8 @@ bool DoGenerateNewNode(int level)
     }
 
     int r = rand();
-    printf("rand: %d\n", r);
     int percentageDecision = r * g_NodeCreationDenominator;
-    printf("percentageDecision1: %d\n", percentageDecision);
     percentageDecision = percentageDecision / RAND_MAX;
-    printf("percentageDecision2: %d\n\n\n", percentageDecision);
 
     if (percentageDecision > g_NodeCreationChance)
     {
@@ -140,15 +138,67 @@ void GenerateBinaryTree(BNode** tree, int level = 0)
     }
 }
 
+void DestroyTree(BNode** tree)
+{
+    if (!tree || !*tree)
+    {
+        return;
+    }
+
+    BNode* pTree = *tree;
+
+    DestroyTree(&(pTree->left));
+    DestroyTree(&(pTree->right));
+
+    delete pTree;
+    *tree = nullptr;
+}
+
+
+std::queue<BNode*> g_VisitQueue;
+std::vector<BNode*> g_LeftSiblingStack;
+
+
+void WireSiblings(BNode* tree)
+{
+    if (!tree)
+    {
+        return;
+    }
+
+    if (!g_LeftSiblingStack.empty())
+    {
+        BNode* sibling = g_LeftSiblingStack.back();
+        tree->sibling = sibling;
+        g_LeftSiblingStack.pop_back();
+    }
+
+    if (tree->left)
+    {
+        WireSiblings(tree->left);
+    }
+
+    g_LeftSiblingStack.push_back(tree->left);
+
+    if (tree->right)
+    {
+        WireSiblings(tree->right);
+    }
+
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
     BNode* tree = new BNode();
 
-    srand(time(nullptr));
+    srand((unsigned int)time(nullptr));
     GenerateBinaryTree(&tree);
     PrintTree(tree);
-
+    WireSiblings(tree);
+    printf("\n\nAfter wiring...\n");
+    PrintTree(tree);
     printf("\n\nPress Any Key to Continue");
+    DestroyTree(&tree);
     getchar();
     return 0;
 }
